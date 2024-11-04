@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .block {
+            flex: 1;
+            margin: 10px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .block label {
+            display: block; 
+            margin-top: 10px; 
+        }
+        .characters-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .character {
+            flex: 0 1 30%;
+            margin: 10px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .health-bar, .mana-bar {
+            width: 100%;
+            height: 20px;
+            border: 1px solid #000;
+            border-radius: 5px;
+            margin-top: 5px;
+        }
+        .health-fill {
+            height: 100%;
+            background-color: green;
+            border-radius: 5px;
+        }
+        .mana-fill {
+            height: 100%;
+            background-color: blue;
+            border-radius: 5px;
+        }
+        .coin-icons {
+            display: flex;
+            align-items: center; /* Alinha verticalmente os itens */
+        }
+        .coin {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px; /* Espaço entre o ícone e a quantidade */
+        }
+        .input-small {
+            width: 60px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Controle de RPG</h1>
+    
+    <div class="container">
+        <div class="block">
+            <h2>Criação de Personagem</h2>
+            <label for="characterName">Nome do Personagem:</label>
+            <input type="text" id="characterName" placeholder="Digite o nome">
+            <label for="characterHealth">Vida Máxima:</label>
+            <input type="number" id="characterHealth" placeholder="Vida" min="0" value="100">
+            <label for="characterMana">Mana Máxima:</label>
+            <input type="number" id="characterMana" placeholder="Mana" min="0" value="100">
+            <label for="goldAmount">Ouro:</label>
+            <input type="number" id="goldAmount" placeholder="Ouro" min="0" value="0">
+            <label for="silverAmount">Prata:</label>
+            <input type="number" id="silverAmount" placeholder="Prata" min="0" value="0">
+            <label for="bronzeAmount">Bronze:</label>
+            <input type="number" id="bronzeAmount" placeholder="Bronze" min="0" value="0">
+            <button onclick="addCharacter()">Adicionar Personagem</button>
+        </div>
+
+        <div class="block">
+            <h2>Edição de Personagem</h2>
+            <label for="characterSelect">Selecionar Personagem:</label>
+            <select id="characterSelect"></select>
+            <label for="editType">Selecionar Edição:</label>
+            <select id="editType">
+                <option value="health">Vida</option>
+                <option value="mana">Mana</option>
+                <option value="maxHealth">Vida Máxima</option>
+                <option value="maxMana">Mana Máxima</option>
+                <option value="gold">Ouro</option>
+                <option value="silver">Prata</option>
+                <option value="bronze">Bronze</option>
+            </select>
+            <label for="editAction">Selecionar Ação:</label>
+            <select id="editAction">
+                <option value="increase">Aumentar</option>
+                <option value="decrease">Diminuir</option>
+            </select>
+            <label for="editAmount">Quantidade:</label>
+            <input type="number" id="editAmount" placeholder="Quantidade" min="0">
+            <button onclick="editCharacter()">Confirmar Edição</button>
+            <button onclick="deleteCharacter()">Excluir Personagem</button>
+        </div>
+    </div>
+    
+    <h2>Personagens</h2>
+    <div id="characters" class="characters-container"></div>
+
+    <script>
+        const apiUrl = 'http://localhost:3000/api';
+
+        async function fetchCharacters() {
+            const response = await fetch(`${apiUrl}/characters`);
+            const data = await response.json();
+            const charactersDiv = document.getElementById('characters');
+            const characterSelect = document.getElementById('characterSelect');
+            charactersDiv.innerHTML = '';
+            characterSelect.innerHTML = '';
+
+            data.forEach((character, index) => {
+                const div = document.createElement('div');
+                div.className = 'character';
+                div.innerHTML = `
+                    <strong>${character.name}</strong>
+                    <div class="health-bar">
+                        <div class="health-fill" style="width: ${(character.health / character.maxHealth) * 100}%"></div>
+                    </div>
+                    <div>Vida: ${character.health} / ${character.maxHealth}</div>
+                    <div class="mana-bar">
+                        <div class="mana-fill" style="width: ${(character.mana / character.maxMana) * 100}%"></div>
+                    </div>
+                    <div>Mana: ${character.mana} / ${character.maxMana}</div>
+                    <div class="coin-icons">
+                        <img class="coin" src="ouro.png" alt="Ouro">${Math.floor(character.gold + character.silver / 100 + character.bronze / 10000)}
+                    </div>
+                `;
+                charactersDiv.appendChild(div);
+                
+                // Adiciona o personagem ao seletor de edição
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = character.name;
+                characterSelect.appendChild(option);
+            });
+        }
+
+        async function addCharacter() {
+            const name = document.getElementById('characterName').value;
+            const health = parseInt(document.getElementById('characterHealth').value);
+            const mana = parseInt(document.getElementById('characterMana').value);
+            const gold = parseInt(document.getElementById('goldAmount').value) || 0;
+            const silver = parseInt(document.getElementById('silverAmount').value) || 0;
+            const bronze = parseInt(document.getElementById('bronzeAmount').value) || 0;
+
+            const response = await fetch(`${apiUrl}/characters`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, health, mana, maxHealth: health, maxMana: mana, gold, silver, bronze })
+            });
+            if (response.ok) {
+                await fetchCharacters();
+            }
+        }
+
+        async function editCharacter() {
+            const index = document.getElementById('characterSelect').value;
+            const editType = document.getElementById('editType').value;
+            const editAction = document.getElementById('editAction').value;
+            const amount = parseInt(document.getElementById('editAmount').value) || 0;
+
+            const response = await fetch(`${apiUrl}/characters/${index}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ [editType]: editAction === 'increase' ? amount : -amount })
+            });
+            if (response.ok) {
+                await fetchCharacters();
+            }
+        }
+
+        async function deleteCharacter() {
+            const index = document.getElementById('characterSelect').value;
+
+            const response = await fetch(`${apiUrl}/characters/${index}`, {
+                method: 'DELETE'
+            });
+            if (response.ok) {
+                await fetchCharacters();
+            }
+        }
+
+        // Carrega personagens ao iniciar a página
+        window.onload = async () => {
+            await fetchCharacters();
+        };
+    </script>
+</body>
+</html>

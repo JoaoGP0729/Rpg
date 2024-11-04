@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlay de RPG</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cinzel', serif; /* Fonte Cinzel */
+            background-color: transparent; /* Fundo transparente */
+            color: white;
+        }
+        .character-overlay {
+            display: flex;
+            flex-direction: column; /* Coloca os personagens um embaixo do outro */
+            padding: 10px;
+            align-items: center; /* Centraliza os personagens no container */
+        }
+        .character-box {
+            background-color: transparent; /* Fundo transparente */
+            padding: 10px;
+            width: 200px; /* Largura fixa para a centralização */
+            text-align: center; /* Centraliza o texto */
+        }
+        .health-bar, .mana-bar {
+            width: 200px; /* Largura das barras */
+            height: 25px; /* Altura das barras */
+            background-color: gray;
+            margin: 0; /* Remove o espaço entre as barras */
+            position: relative; /* Para posicionar os números */
+        }
+        .health-fill {
+            height: 100%;
+            background-color: green;
+            position: absolute; /* Para posicionar os números corretamente */
+            top: 0;
+            left: 0;
+        }
+        .mana-fill {
+            height: 100%;
+            background-color: blue;
+            position: absolute; /* Para posicionar os números corretamente */
+            top: 0;
+            left: 0;
+        }
+        .coin-icons {
+            display: flex;
+            align-items: center; /* Alinha verticalmente os itens */
+            justify-content: space-between; /* Distribui o espaço entre o nome e a quantidade de ouro */
+            margin-top: 5px;
+            width: 100%; /* Faz o contêiner ocupar toda a largura */
+        }
+        .coin {
+            width: 20px;
+            height: 20px;
+            margin-left: 5px; /* Espaço entre o ícone e a quantidade */
+        }
+        .bar-text {
+            position: absolute; /* Para centralizar o texto nas barras */
+            width: 100%;
+            text-align: center;
+            line-height: 25px; /* Centraliza verticalmente o texto */
+            color: white; /* Cor do texto */
+            text-shadow: 0 0 5px black, 0 0 10px black; /* Contorno do texto */
+            font-weight: bold; /* Texto em negrito */
+        }
+    </style>
+</head>
+<body>
+    <div class="character-overlay" id="overlayCharacters"></div>
+
+    <script>
+        const apiUrl = 'http://localhost:3000/api';
+
+        async function fetchOverlayCharacters() {
+            const response = await fetch(`${apiUrl}/characters`);
+            const characters = await response.json();
+            const overlayDiv = document.getElementById('overlayCharacters');
+            overlayDiv.innerHTML = '';
+
+            characters.forEach(character => {
+                const totalGold = Math.floor(character.gold + character.silver / 100 + character.bronze / 10000);
+                const characterDiv = document.createElement('div');
+                characterDiv.className = 'character-box';
+                characterDiv.innerHTML = `
+                    <div class="coin-icons">
+                        <strong>${character.name}</strong>
+                        <span><img class="coin" src="ouro.png" alt="Ouro">${totalGold}</span>
+                    </div>
+                    <div class="health-bar">
+                        <div class="health-fill" style="width: ${(character.health / character.maxHealth) * 100}%"></div>
+                        <div class="bar-text">${character.health} / ${character.maxHealth}</div>
+                    </div>
+                    <div class="mana-bar">
+                        <div class="mana-fill" style="width: ${(character.mana / character.maxMana) * 100}%"></div>
+                        <div class="bar-text">${character.mana} / ${character.maxMana}</div>
+                    </div>
+                `;
+                overlayDiv.appendChild(characterDiv);
+            });
+        }
+
+        // Atualiza a overlay a cada 5 segundos
+        setInterval(fetchOverlayCharacters, 5000);
+        fetchOverlayCharacters();
+    </script>
+</body>
+</html>
